@@ -58,6 +58,14 @@ const SKINCARE_PM = ["Oil Cleanser","Face Wash","Retinol","Niacinamide Serum","M
 const SKIN_CONCERNS = ["Breakout","Oiliness","Dryness","Razor Burn","Ingrown Hairs","Irritation","Sensitivity","Redness","Texture","Puffiness","Good skin day"];
 const SUPPLEMENTS = ["Creatine","Protein","Magnesium Glycinate","Zinc","Omega-3","Vitamin D","Electrolytes","Ashwagandha"];
 const SLEEP_AIDS = ["Magnesium Glycinate","Melatonin","CBD","Ashwagandha"];
+const TIMED_MEDS = [
+  {id:"vyvanse",name:"Vyvanse",info:"Onset ~1h · peaks 2–3h · lasts 10–14h"},
+  {id:"adderall_ir",name:"Adderall IR",info:"Onset ~30min · peaks 1–2h · lasts 4–6h"},
+  {id:"adderall_xr",name:"Adderall XR",info:"Onset ~1h · peaks 2–3h · lasts 8–10h"},
+  {id:"ativan",name:"Ativan (Lorazepam)",info:"Onset 15–30min · lasts 6–8h"},
+  {id:"propranolol",name:"Propranolol",info:"Onset 30–60min · lasts 4–6h"},
+];
+const HEALTH_SUPPS = ["Magnesium Glycinate","Iron","Creatine","Electrolytes"];
 const SYMPTOMS = ["Headache","Fatigue","Brain fog","Anxiety spike","Low mood","Joint pain","Muscle soreness","Bloating","Sick","Insomnia","Eye strain"];
 const WORKOUT_TYPES = ["Push","Pull","Legs","Upper Body","Full Body","Cardio","HIIT","Mobility / Yoga","Run","Swim","Cycle","Sports","Walk","Other"];
 const MEAL_SENSITIVITY = ["Dairy","Gluten","Alcohol","Ultra-processed","High sugar","High sodium","Soy","Fried"];
@@ -196,9 +204,8 @@ function Dashboard({dailyLogs,setDailyLogs,groomingLogs,groomingIntervals,userNa
     </div>
 
     {/* Stats */}
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
-      <div style={{...card,textAlign:"center"}}><div style={lbl}>Workout Streak</div><div style={{...serif,fontSize:44,fontWeight:300,color:C.accent,lineHeight:1.1}}>{workoutStreak}</div><div style={{fontSize:11,color:C.muted,marginTop:3}}>days</div></div>
-      <div style={{...card,textAlign:"center"}}><div style={lbl}>Last Sleep</div><div style={{...serif,fontSize:yestSleep?32:22,fontWeight:300,color:"#8A9BAA",lineHeight:1.1,marginTop:yestSleep?0:8}}>{yestSleep?yestSleep.label:"—"}</div>{yestLog.sleepQuality&&<div style={{fontSize:11,color:C.muted,marginTop:3}}>Quality: {yestLog.sleepQuality}/10</div>}</div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+      <div style={{...card,textAlign:"center"}}><div style={lbl}>Sleep Grade</div><div style={{...serif,fontSize:44,fontWeight:300,color:"#8A9BAA",lineHeight:1.1}}>{yestLog.sleepQuality||"—"}</div><div style={{fontSize:11,color:C.muted,marginTop:3}}>{yestLog.sleepQuality?"/10 last night":"not logged"}</div></div>
       <div style={{...card,textAlign:"center"}}><div style={lbl}>Today's Skin</div><div style={{...serif,fontSize:44,fontWeight:300,color:C.gold,lineHeight:1.1}}>{today.skinRating||"—"}</div><div style={{fontSize:11,color:C.muted,marginTop:3}}>{today.skinRating?"/10":"not logged"}</div></div>
     </div>
 
@@ -305,24 +312,12 @@ function TrackerTab({logs,setLogs}){
     {/* Mind & Mood */}
     <div style={card}>
       <SHead>Mind & Mood</SHead>
+      <Slider label="Sleep Grade" emoji="🌙" value={log.sleepQuality||5} onChange={v=>upd("sleepQuality",v)} color="#8A9BAA" />
       <Slider label="Mood" emoji="🧠" value={log.mood||5} onChange={v=>upd("mood",v)} color={C.accent} />
       <Slider label="Anxiety" emoji="⚡" value={log.anxiety||5} onChange={v=>upd("anxiety",v)} color={C.gold} />
       <Slider label="Energy" emoji="✨" value={log.energy||5} onChange={v=>upd("energy",v)} color={C.sage} />
       <Slider label="Focus" emoji="🎯" value={log.focus||5} onChange={v=>upd("focus",v)} color="#8A9BAA" />
       <div><label style={lbl}>Notes</label><textarea rows={2} value={log.notes||""} onChange={e=>upd("notes",e.target.value)} placeholder="Anything on your mind today..." style={inp} /></div>
-    </div>
-
-    {/* Sleep */}
-    <div style={card}>
-      <SHead>Sleep</SHead>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-        <div><label style={lbl}>Bedtime</label><input type="time" value={log.bedtime||""} onChange={e=>upd("bedtime",e.target.value)} style={inp} /></div>
-        <div><label style={lbl}>Wake Time</label><input type="time" value={log.wakeTime||""} onChange={e=>upd("wakeTime",e.target.value)} style={inp} /></div>
-      </div>
-      {sl&&<div style={{padding:"9px 13px",background:"#8A9BAA18",borderRadius:8,marginBottom:12,display:"flex",alignItems:"center",gap:12}}><div style={{...serif,fontSize:26,color:"#8A9BAA",lineHeight:1}}>{sl.label}</div><div style={{fontSize:12,color:C.muted}}>{sl.total<360?"Under 6h — recovery risk":sl.total>=420&&sl.total<=540?"Optimal range":sl.total>540?"Long sleep":"Slightly short"}</div></div>}
-      <div style={{marginBottom:12}}><Slider label="Sleep Quality" emoji="🌙" value={log.sleepQuality||5} onChange={v=>upd("sleepQuality",v)} color="#8A9BAA" /></div>
-      <div style={{marginBottom:12}}><div style={lbl}>Sleep Aids</div><div style={{display:"flex",flexWrap:"wrap",gap:6}}>{SLEEP_AIDS.map(s=><Check key={s} label={s} color="#8A9BAA" checked={(log.sleepSupps||[]).includes(s)} onChange={e=>updArr("sleepSupps",s,e.target.checked)} />)}</div></div>
-      <div><label style={lbl}>Notes</label><input value={log.sleepNotes||""} onChange={e=>upd("sleepNotes",e.target.value)} placeholder="Woke at 3am, vivid dreams..." style={inp} /></div>
     </div>
 
     {/* Body Data */}
@@ -335,31 +330,6 @@ function TrackerTab({logs,setLogs}){
       </div>
     </div>
 
-    {/* Food */}
-    <div style={card}>
-      <SHead>Food & Meals</SHead>
-      {[["breakfast","Breakfast"],["lunch","Lunch"],["dinner","Dinner"],["snacks","Snacks"]].map(([k,label])=>{
-        const mealTags=(log.mealSensitivity||{})[k]||[];
-        const togTag=tag=>{const c=log.mealSensitivity||{};const l=c[k]||[];upd("mealSensitivity",{...c,[k]:l.includes(tag)?l.filter(t=>t!==tag):[...l,tag]});};
-        return(<div key={k} style={{marginBottom:14,paddingBottom:14,borderBottom:k!=="snacks"?`1px solid ${C.border}`:"none"}}><label style={lbl}>{label}</label><input value={log[k]||""} onChange={e=>upd(k,e.target.value)} placeholder="What did you eat?" style={{...inp,marginBottom:7}} /><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{MEAL_SENSITIVITY.map(tag=><Pill key={tag} label={tag} active={mealTags.includes(tag)} color={C.danger} onClick={()=>togTag(tag)} />)}</div></div>);
-      })}
-      <div style={{marginBottom:10}}><div style={lbl}>Day flags</div><div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:10}}>{DAY_FLAGS.map(tag=><Pill key={tag} label={tag} active={(log.foodTagsDay||[]).includes(tag)} color={C.sage} onClick={()=>{const l=log.foodTagsDay||[];upd("foodTagsDay",l.includes(tag)?l.filter(t=>t!==tag):[...l,tag]);}} />)}</div></div>
-      <div><label style={lbl}>Notes</label><textarea rows={2} value={log.foodNotes||""} onChange={e=>upd("foodNotes",e.target.value)} placeholder="Energy crash at 3pm, felt heavy after lunch..." style={inp} /></div>
-    </div>
-
-    {/* Gut */}
-    <div style={card}>
-      <SHead>Gut & Digestion</SHead>
-      <div style={lbl}>Bristol Stool Scale — tap all that apply today</div>
-      <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:12}}>
-        {[{t:0,short:"No poop today",detail:"No bowel movement today",col:C.muted},{t:1,short:"Type 1 · Hard pellets",detail:"Separate hard lumps — severe constipation",col:C.danger},{t:2,short:"Type 2 · Lumpy log",detail:"Sausage-shaped but lumpy — mild constipation",col:C.danger},{t:3,short:"Type 3 · Cracked log",detail:"Log with surface cracks — on the normal end",col:C.gold},{t:4,short:"Type 4 · Smooth log",detail:"Smooth, soft snake — ideal",col:C.sage},{t:5,short:"Type 5 · Soft blobs",detail:"Soft pieces — lacking fiber",col:C.gold},{t:6,short:"Type 6 · Mushy",detail:"Fluffy pieces — mild diarrhea",col:C.danger},{t:7,short:"Type 7 · Watery",detail:"Entirely liquid — severe diarrhea",col:C.danger}].map(({t,short,detail,col})=>{
-          const selected=(log.bristolTypes||[]).includes(t);
-          return(<button key={t} onClick={()=>{const cur=log.bristolTypes||[];upd("bristolTypes",selected?cur.filter(x=>x!==t):[...cur,t]);}} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderRadius:8,cursor:"pointer",textAlign:"left",background:selected?col+"15":"transparent",border:`1px solid ${selected?col+"66":C.border}`,transition:"all 0.12s"}}><div style={{...serif,fontSize:22,fontWeight:300,color:selected?col:C.faint,flexShrink:0,width:24,textAlign:"center",lineHeight:1}}>{t||"—"}</div><div><div style={{fontSize:12,fontWeight:selected?500:400,color:selected?col:C.text}}>{short}</div><div style={{fontSize:10,color:C.muted,marginTop:1}}>{detail}</div></div></button>);
-        })}
-      </div>
-      <div><label style={lbl}>Notes</label><input value={log.gutNotes||""} onChange={e=>upd("gutNotes",e.target.value)} placeholder="Timing, bloating notes..." style={inp} /></div>
-    </div>
-
     {/* Symptoms */}
     <div style={card}>
       <SHead>Symptoms</SHead>
@@ -367,32 +337,6 @@ function TrackerTab({logs,setLogs}){
       <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
         {SYMPTOMS.map(sym=>{const sev=(log.symptoms||{})[sym];return(<button key={sym} onClick={()=>cycleSymptom(sym)} style={{padding:"5px 12px",borderRadius:18,fontSize:12,cursor:"pointer",background:sev?SEV_COLORS[sev]+"18":"transparent",border:`1px solid ${sev?SEV_COLORS[sev]+"66":C.border}`,color:sev?SEV_COLORS[sev]:C.muted,fontWeight:sev?500:400,transition:"all 0.12s"}}>{sym}{sev?" · "+sev:""}</button>);})}
       </div>
-    </div>
-
-    {/* Supplements */}
-    <div style={card}>
-      <SHead>Supplements</SHead>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:12}}>{SUPPLEMENTS.map(s=><Check key={s} label={s} color={C.sage} checked={(log.meds||[]).includes(s)} onChange={e=>updArr("meds",s,e.target.checked)} />)}</div>
-      <input value={log.medNote||""} onChange={e=>upd("medNote",e.target.value)} placeholder="Notes..." style={inp} />
-    </div>
-
-    {/* Drugs & Timing */}
-    <div style={card}>
-      <SHead>Drugs &amp; Timing</SHead>
-      <div style={{fontSize:11,color:C.muted,marginBottom:12}}>Check what you took and log the time</div>
-      <div style={{display:"flex",flexDirection:"column",gap:6}}>
-        {SUPPLEMENTS.map(s=>{
-          const entry=(log.drugTiming||{})[s];const checked=!!entry;
-          const togDrug=e=>{const dt={...(log.drugTiming||{})};if(e.target.checked)dt[s]={time:""};else delete dt[s];upd("drugTiming",dt);};
-          const setTime=e=>{const dt={...(log.drugTiming||{})};dt[s]={...(dt[s]||{}),time:e.target.value};upd("drugTiming",dt);};
-          return(<div key={s} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 10px",borderRadius:8,background:checked?C.sage+"12":"transparent",border:`1px solid ${checked?C.sage+"44":"transparent"}`,transition:"all 0.12s"}}>
-            <input type="checkbox" checked={checked} onChange={togDrug} style={{cursor:"pointer",accentColor:C.sage,flexShrink:0}} />
-            <span style={{flex:1,fontSize:12,color:checked?C.text:C.muted}}>{s}</span>
-            {checked&&<input type="time" value={entry.time||""} onChange={setTime} style={{...inp,width:"auto",padding:"4px 9px",fontSize:12}} />}
-          </div>);
-        })}
-      </div>
-      <div style={{marginTop:10}}><input value={log.drugNote||""} onChange={e=>upd("drugNote",e.target.value)} placeholder="Notes..." style={inp} /></div>
     </div>
 
     {/* Pin a Note */}
@@ -570,22 +514,22 @@ function WorkoutsTab({logs,setLogs}){
   const [weeklyGoal,setWeeklyGoal]=useLS("mw_workout_goal",4);
   const log=logs[date]||{};
   const upd=(f,v)=>setLogs({...logs,[date]:{...(logs[date]||{}),[f]:v}});
+  const updArr=(f,item,checked)=>{const list=log[f]||[];upd(f,checked?[...list,item]:list.filter(x=>x!==item));};
 
   const addWorkout=()=>{
     const w=[...(log.workouts||[]),{id:Date.now(),type:form.type,duration:form.duration?+form.duration:null,intensity:form.intensity,notes:form.notes}];
     upd("workouts",w);setForm({type:"Push",duration:"",intensity:7,notes:""});
   };
 
-  // Streak
-  const streak=useMemo(()=>{
-    let s=0;const d=new Date();
-    for(let i=0;i<365;i++){
-      d.setDate(d.getDate()-(i===0?0:1));
-      const k=d.toISOString().split("T")[0];
-      if((logs[k]?.workouts||[]).length>0)s++;else if(i>0)break;
-    }
-    return s;
-  },[logs]);
+  const addDose=(medId)=>{
+    const now=new Date();const t=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
+    const doses={...(log.medDoses||{})};doses[medId]=[...(doses[medId]||[]),{time:t,id:Date.now()}];
+    upd("medDoses",doses);
+  };
+  const removeDose=(medId,doseId)=>{
+    const doses={...(log.medDoses||{})};doses[medId]=(doses[medId]||[]).filter(d=>d.id!==doseId);
+    upd("medDoses",doses);
+  };
 
   // This week
   const ws=weekStart(todayStr());
@@ -611,11 +555,68 @@ function WorkoutsTab({logs,setLogs}){
   const workoutDays=Object.entries(logs).filter(([,v])=>(v?.workouts||[]).length>0).sort((a,b)=>new Date(b[0])-new Date(a[0]));
 
   return(<div style={{display:"flex",flexDirection:"column",gap:18}}>
-    <PTitle sub="Track your training">Workouts</PTitle>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
+      <PTitle sub="Track your training">Workouts</PTitle>
+      <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...inp,width:"auto",marginBottom:22}} />
+    </div>
+    {date!==todayStr()&&<div style={{fontSize:11,color:C.gold,padding:"6px 14px",background:C.gold+"12",borderRadius:8}}>Logging to {date}</div>}
+
+    {/* Sleep Grade */}
+    <div style={card}>
+      <SHead>Sleep</SHead>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}><span style={lbl}>🌙 Last Night's Grade</span><span style={{...serif,fontSize:28,color:"#8A9BAA",lineHeight:1}}>{log.sleepQuality||5}<span style={{fontSize:12,color:C.muted}}>/10</span></span></div>
+      <input type="range" min={1} max={10} value={log.sleepQuality||5} onChange={e=>upd("sleepQuality",+e.target.value)} />
+    </div>
+
+    {/* Health — Medications & Supplements */}
+    <div style={card}>
+      <SHead>Health</SHead>
+      <div style={{fontSize:10,letterSpacing:"0.12em",textTransform:"uppercase",color:C.muted,marginBottom:10,fontWeight:500}}>Timed Medications</div>
+      <div style={{display:"flex",flexDirection:"column",gap:1,marginBottom:18}}>
+        {TIMED_MEDS.map(med=>{
+          const doses=(log.medDoses||{})[med.id]||[];
+          return(<div key={med.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:10,background:doses.length>0?C.accent+"0A":C.surface,border:`1px solid ${doses.length>0?C.accent+"33":C.border}`,marginBottom:4}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13,fontWeight:500,color:doses.length>0?C.text:C.muted,marginBottom:2}}>{med.name}</div>
+              <div style={{fontSize:11,color:C.faint}}>{med.info}</div>
+              {doses.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:6}}>{doses.map(d=>(<span key={d.id} style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:11,padding:"2px 8px",borderRadius:10,background:C.accent+"18",color:C.accent}}>{fmt12(d.time)}<button onClick={()=>removeDose(med.id,d.id)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,lineHeight:1,padding:0}}>×</button></span>))}</div>}
+            </div>
+            <button onClick={()=>addDose(med.id)} style={{flexShrink:0,padding:"7px 14px",borderRadius:8,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:12,fontWeight:500,transition:"all 0.12s"}}>+ Dose</button>
+          </div>);
+        })}
+      </div>
+      <div style={{fontSize:10,letterSpacing:"0.12em",textTransform:"uppercase",color:C.muted,marginBottom:10,fontWeight:500}}>Supplements</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:12}}>{HEALTH_SUPPS.map(s=><Check key={s} label={s} color={C.sage} checked={(log.healthSupps||[]).includes(s)} onChange={e=>updArr("healthSupps",s,e.target.checked)} />)}</div>
+      <input value={log.healthNote||""} onChange={e=>upd("healthNote",e.target.value)} placeholder="Notes..." style={inp} />
+    </div>
+
+    {/* Food */}
+    <div style={card}>
+      <SHead>Food & Meals</SHead>
+      {[["breakfast","Breakfast"],["lunch","Lunch"],["dinner","Dinner"],["snacks","Snacks"]].map(([k,label])=>{
+        const mealTags=(log.mealSensitivity||{})[k]||[];
+        const togTag=tag=>{const c=log.mealSensitivity||{};const l=c[k]||[];upd("mealSensitivity",{...c,[k]:l.includes(tag)?l.filter(t=>t!==tag):[...l,tag]});};
+        return(<div key={k} style={{marginBottom:14,paddingBottom:14,borderBottom:k!=="snacks"?`1px solid ${C.border}`:"none"}}><label style={lbl}>{label}</label><input value={log[k]||""} onChange={e=>upd(k,e.target.value)} placeholder="What did you eat?" style={{...inp,marginBottom:7}} /><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{MEAL_SENSITIVITY.map(tag=><Pill key={tag} label={tag} active={mealTags.includes(tag)} color={C.danger} onClick={()=>togTag(tag)} />)}</div></div>);
+      })}
+      <div style={{marginBottom:10}}><div style={lbl}>Day flags</div><div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:10}}>{DAY_FLAGS.map(tag=><Pill key={tag} label={tag} active={(log.foodTagsDay||[]).includes(tag)} color={C.sage} onClick={()=>{const l=log.foodTagsDay||[];upd("foodTagsDay",l.includes(tag)?l.filter(t=>t!==tag):[...l,tag]);}} />)}</div></div>
+      <div><label style={lbl}>Notes</label><textarea rows={2} value={log.foodNotes||""} onChange={e=>upd("foodNotes",e.target.value)} placeholder="Energy crash at 3pm, felt heavy after lunch..." style={inp} /></div>
+    </div>
+
+    {/* Gut */}
+    <div style={card}>
+      <SHead>Gut & Digestion</SHead>
+      <div style={lbl}>Bristol Stool Scale — tap all that apply</div>
+      <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:12}}>
+        {[{t:0,short:"No poop today",detail:"No bowel movement",col:C.muted},{t:1,short:"Type 1 · Hard pellets",detail:"Severe constipation",col:C.danger},{t:2,short:"Type 2 · Lumpy log",detail:"Mild constipation",col:C.danger},{t:3,short:"Type 3 · Cracked log",detail:"On the normal end",col:C.gold},{t:4,short:"Type 4 · Smooth log",detail:"Ideal",col:C.sage},{t:5,short:"Type 5 · Soft blobs",detail:"Lacking fiber",col:C.gold},{t:6,short:"Type 6 · Mushy",detail:"Mild diarrhea",col:C.danger},{t:7,short:"Type 7 · Watery",detail:"Severe diarrhea",col:C.danger}].map(({t,short,detail,col})=>{
+          const selected=(log.bristolTypes||[]).includes(t);
+          return(<button key={t} onClick={()=>{const cur=log.bristolTypes||[];upd("bristolTypes",selected?cur.filter(x=>x!==t):[...cur,t]);}} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderRadius:8,cursor:"pointer",textAlign:"left",background:selected?col+"15":"transparent",border:`1px solid ${selected?col+"66":C.border}`,transition:"all 0.12s"}}><div style={{...serif,fontSize:22,fontWeight:300,color:selected?col:C.faint,flexShrink:0,width:24,textAlign:"center",lineHeight:1}}>{t||"—"}</div><div><div style={{fontSize:12,fontWeight:selected?500:400,color:selected?col:C.text}}>{short}</div><div style={{fontSize:10,color:C.muted,marginTop:1}}>{detail}</div></div></button>);
+        })}
+      </div>
+      <div><label style={lbl}>Notes</label><input value={log.gutNotes||""} onChange={e=>upd("gutNotes",e.target.value)} placeholder="Timing, bloating notes..." style={inp} /></div>
+    </div>
 
     {/* Stats row */}
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
-      <div style={{...card,textAlign:"center"}}><div style={lbl}>Streak</div><div style={{...serif,fontSize:44,fontWeight:300,color:C.accent,lineHeight:1.1}}>{streak}</div><div style={{fontSize:11,color:C.muted,marginTop:3}}>days</div></div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
       <div style={{...card,textAlign:"center"}}><div style={lbl}>This Week</div><div style={{...serif,fontSize:44,fontWeight:300,color:thisWeekCount>=weeklyGoal?C.sage:C.gold,lineHeight:1.1}}>{thisWeekCount}</div><div style={{fontSize:11,color:C.muted,marginTop:3}}>of {weeklyGoal} goal</div></div>
       <div style={{...card,textAlign:"center"}}><div style={lbl}>Weekly Goal</div><input type="number" value={weeklyGoal} onChange={e=>setWeeklyGoal(+e.target.value)} min={1} max={7} style={{...inp,textAlign:"center",...serif,fontSize:32,fontWeight:300,color:C.muted,background:"transparent",border:"none",padding:0,width:"100%",marginTop:4}} /></div>
     </div>
@@ -636,11 +637,7 @@ function WorkoutsTab({logs,setLogs}){
 
     {/* Log Workout */}
     <div style={card}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-        <div style={{...serif,fontSize:17,fontWeight:400,color:C.white}}>Log Workout</div>
-        <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...inp,width:"auto"}} />
-      </div>
-      {date!==todayStr()&&<div style={{fontSize:11,color:C.gold,marginBottom:12}}>Logging to {date}</div>}
+      <div style={{marginBottom:14}}><div style={{...serif,fontSize:17,fontWeight:400,color:C.white}}>Log Workout</div></div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
         <div><label style={lbl}>Type</label><select value={form.type} onChange={e=>setForm({...form,type:e.target.value})} style={inp}>{WORKOUT_TYPES.map(t=><option key={t} value={t}>{t}</option>)}</select></div>
         <div><label style={lbl}>Duration (min)</label><input type="number" value={form.duration} onChange={e=>setForm({...form,duration:e.target.value})} placeholder="60" style={inp} /></div>
@@ -648,13 +645,6 @@ function WorkoutsTab({logs,setLogs}){
       <div style={{marginBottom:12}}><Slider label="Intensity" emoji="🔥" value={form.intensity} onChange={v=>setForm({...form,intensity:v})} color={C.accent} /></div>
       <div style={{marginBottom:12}}><label style={lbl}>Notes</label><input value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="PRs, how you felt, exercises..." style={inp} /></div>
       <button onClick={addWorkout} style={{width:"100%",padding:"11px",borderRadius:9,background:C.accent,color:C.bg,border:"none",cursor:"pointer",fontSize:13,fontWeight:500}}>+ Log Workout</button>
-    </div>
-
-    {/* Supplements */}
-    <div style={card}>
-      <SHead>Supplements</SHead>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:12}}>{SUPPLEMENTS.map(s=><Check key={s} label={s} color={C.sage} checked={(log.meds||[]).includes(s)} onChange={e=>{const l=log.meds||[];upd("meds",e.target.checked?[...l,s]:l.filter(x=>x!==s));}} />)}</div>
-      <input value={log.medNote||""} onChange={e=>upd("medNote",e.target.value)} placeholder="Notes..." style={inp} />
     </div>
 
     {/* Today's workouts */}
