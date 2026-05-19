@@ -149,6 +149,13 @@ function Dashboard({dailyLogs,setDailyLogs,groomingLogs,groomingIntervals,userNa
     return streak;
   },[dailyLogs]);
 
+  // Countdowns
+  const bachDate=new Date("2026-07-03T12:00:00");
+  const weddingDate=new Date("2026-09-17T12:00:00");
+  const nowMid=new Date();nowMid.setHours(12,0,0,0);
+  const bachDays=Math.ceil((bachDate-nowMid)/86400000);
+  const weddingDays=Math.ceil((weddingDate-nowMid)/86400000);
+
   // Yesterday's sleep
   const yest=new Date();yest.setDate(yest.getDate()-1);
   const yestStr=yest.toISOString().split("T")[0];
@@ -171,6 +178,20 @@ function Dashboard({dailyLogs,setDailyLogs,groomingLogs,groomingIntervals,userNa
       <div>
         <h1 style={{...serif,fontSize:32,fontWeight:300,color:C.white,margin:0}}>{greeting}{userName?", "+userName:""}.</h1>
         <div style={{fontSize:13,color:C.muted,marginTop:4}}>{new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div>
+      </div>
+    </div>
+
+    {/* Countdowns */}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+      <div style={{...card,textAlign:"center",borderLeft:`3px solid ${C.gold}`}}>
+        <div style={lbl}>Bachelor Party 🎉</div>
+        <div style={{...serif,fontSize:44,fontWeight:300,color:C.gold,lineHeight:1.1}}>{bachDays}</div>
+        <div style={{fontSize:11,color:C.muted,marginTop:3}}>days · July 3</div>
+      </div>
+      <div style={{...card,textAlign:"center",borderLeft:`3px solid ${C.sage}`}}>
+        <div style={lbl}>Wedding 💍</div>
+        <div style={{...serif,fontSize:44,fontWeight:300,color:C.sage,lineHeight:1.1}}>{weddingDays}</div>
+        <div style={{fontSize:11,color:C.muted,marginTop:3}}>days · Sept 17</div>
       </div>
     </div>
 
@@ -228,7 +249,6 @@ function Dashboard({dailyLogs,setDailyLogs,groomingLogs,groomingIntervals,userNa
           {[{k:"mood",l:"Mood",c:C.accent},{k:"anxiety",l:"Anxiety",c:C.gold},{k:"energy",l:"Energy",c:C.sage},{k:"focus",l:"Focus",c:"#8A9BAA"}].filter(x=>today[x.k]).map(x=>(
             <div key={x.k} style={{textAlign:"center"}}><div style={{...serif,fontSize:32,color:x.c,lineHeight:1}}>{today[x.k]}</div><div style={{...lbl,marginTop:3,marginBottom:0}}>{x.l}</div></div>
           ))}
-          {(today.spendItems||[]).length>0&&<div style={{textAlign:"center"}}><div style={{...serif,fontSize:32,color:C.sage,lineHeight:1}}>${(today.spendItems||[]).filter(i=>!i.returnLikely).reduce((s,i)=>s+i.amount,0).toFixed(0)}</div><div style={{...lbl,marginTop:3,marginBottom:0}}>Spent</div></div>}
         </div>
       </div>
     )}
@@ -356,6 +376,25 @@ function TrackerTab({logs,setLogs}){
       <input value={log.medNote||""} onChange={e=>upd("medNote",e.target.value)} placeholder="Notes..." style={inp} />
     </div>
 
+    {/* Drugs & Timing */}
+    <div style={card}>
+      <SHead>Drugs &amp; Timing</SHead>
+      <div style={{fontSize:11,color:C.muted,marginBottom:12}}>Check what you took and log the time</div>
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        {SUPPLEMENTS.map(s=>{
+          const entry=(log.drugTiming||{})[s];const checked=!!entry;
+          const togDrug=e=>{const dt={...(log.drugTiming||{})};if(e.target.checked)dt[s]={time:""};else delete dt[s];upd("drugTiming",dt);};
+          const setTime=e=>{const dt={...(log.drugTiming||{})};dt[s]={...(dt[s]||{}),time:e.target.value};upd("drugTiming",dt);};
+          return(<div key={s} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 10px",borderRadius:8,background:checked?C.sage+"12":"transparent",border:`1px solid ${checked?C.sage+"44":"transparent"}`,transition:"all 0.12s"}}>
+            <input type="checkbox" checked={checked} onChange={togDrug} style={{cursor:"pointer",accentColor:C.sage,flexShrink:0}} />
+            <span style={{flex:1,fontSize:12,color:checked?C.text:C.muted}}>{s}</span>
+            {checked&&<input type="time" value={entry.time||""} onChange={setTime} style={{...inp,width:"auto",padding:"4px 9px",fontSize:12}} />}
+          </div>);
+        })}
+      </div>
+      <div style={{marginTop:10}}><input value={log.drugNote||""} onChange={e=>upd("drugNote",e.target.value)} placeholder="Notes..." style={inp} /></div>
+    </div>
+
     {/* Pin a Note */}
     <div style={{...card,borderLeft:`3px solid ${C.gold}`}}>
       <SHead>📌 Pin a Note</SHead>
@@ -363,11 +402,6 @@ function TrackerTab({logs,setLogs}){
       <div style={{fontSize:11,color:C.faint,marginTop:6}}>Appears on Dashboard. Use for context that doesn't fit a symptom.</div>
     </div>
 
-    {/* Daily Spend */}
-    <div style={card}>
-      <SHead>Daily Spend</SHead>
-      <SpendLogger log={log} upd={upd} />
-    </div>
   </div>);
 }
 
@@ -616,6 +650,13 @@ function WorkoutsTab({logs,setLogs}){
       <button onClick={addWorkout} style={{width:"100%",padding:"11px",borderRadius:9,background:C.accent,color:C.bg,border:"none",cursor:"pointer",fontSize:13,fontWeight:500}}>+ Log Workout</button>
     </div>
 
+    {/* Supplements */}
+    <div style={card}>
+      <SHead>Supplements</SHead>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:12}}>{SUPPLEMENTS.map(s=><Check key={s} label={s} color={C.sage} checked={(log.meds||[]).includes(s)} onChange={e=>{const l=log.meds||[];upd("meds",e.target.checked?[...l,s]:l.filter(x=>x!==s));}} />)}</div>
+      <input value={log.medNote||""} onChange={e=>upd("medNote",e.target.value)} placeholder="Notes..." style={inp} />
+    </div>
+
     {/* Today's workouts */}
     {(log.workouts||[]).length>0&&(
       <div style={card}>
@@ -789,7 +830,6 @@ const TABS=[
   {id:"tracker",label:"Tracker"},
   {id:"skin",label:"Skin"},
   {id:"workouts",label:"Workouts"},
-  {id:"spend",label:"Spend"},
 ];
 
 function App(){
@@ -863,7 +903,6 @@ function App(){
           {tab==="tracker"&&<TrackerTab logs={dailyLogs} setLogs={setDailyLogs} />}
           {tab==="skin"&&<SkinTab logs={dailyLogs} setLogs={setDailyLogs} groomingLogs={groomingLogs} setGroomingLogs={setGroomingLogs} groomingIntervals={groomingIntervals} setGroomingIntervals={setGroomingIntervals} />}
           {tab==="workouts"&&<WorkoutsTab logs={dailyLogs} setLogs={setDailyLogs} />}
-          {tab==="spend"&&<SpendTab logs={dailyLogs} setLogs={setDailyLogs} />}
         </div>
       </div>
     </div>
