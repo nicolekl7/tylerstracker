@@ -435,16 +435,6 @@ function WorkoutsTab({logs,setLogs}){
     upd("medDoses",doses);
   };
 
-  // 8-week chart
-  const weeks=Array.from({length:8},(_,i)=>{
-    const d=new Date();d.setDate(d.getDate()-(7*(7-i)));
-    const ws2=weekStart(d.toISOString().split("T")[0]);
-    const we=new Date(ws2+"T12:00:00");we.setDate(we.getDate()+6);
-    const we2=we.toISOString().split("T")[0];
-    const count=Object.keys(logs).filter(k=>k>=ws2&&k<=we2&&(logs[k]?.workouts||[]).length>0).length;
-    return{label:new Date(ws2+"T12:00:00").toLocaleDateString("en-US",{month:"numeric",day:"numeric"}),values:{workouts:count}};
-  });
-
   // History
   const workoutDays=Object.entries(logs).filter(([,v])=>(v?.workouts||[]).length>0).sort((a,b)=>new Date(b[0])-new Date(a[0]));
 
@@ -533,15 +523,6 @@ function WorkoutsTab({logs,setLogs}){
       </div>
     )}
 
-    {/* 8-week chart */}
-    {weeks.some(w=>w.values.workouts>0)&&(
-      <div style={card}>
-        <SHead>8-Week Frequency</SHead>
-        <MiniChart data={weeks} colors={{workouts:C.accent}} height={75} />
-        <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}>{weeks.map((w,i)=><div key={i} style={{flex:1,textAlign:"center",fontSize:9,color:C.faint}}>{w.label}</div>)}</div>
-        <div style={{display:"flex",alignItems:"center",gap:5,marginTop:8,fontSize:11,color:C.muted}}><div style={{width:9,height:9,borderRadius:2,background:C.accent+"88"}} />Sessions per week</div>
-      </div>
-    )}
 
     {/* History */}
     {workoutDays.length>0&&(
