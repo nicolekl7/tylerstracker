@@ -524,12 +524,33 @@ function WorkoutsTab({logs,setLogs}){
     )}
 
 
+    {/* Training Balance */}
+    {workoutDays.length>0&&(()=>{
+      const recent=workoutDays.slice(0,12).flatMap(([,v])=>v.workouts||[]);
+      const typeCounts={};recent.forEach(w=>{typeCounts[w.type]=(typeCounts[w.type]||0)+1;});
+      const sorted=Object.entries(typeCounts).sort((a,b)=>b[1]-a[1]);
+      const max=sorted[0]?.[1]||1;
+      const TYPE_COLORS={"Push":"#6A8FAA","Pull":"#7A9B8A","Legs":"#C9A96E","Upper Body":"#8A9BAA","Full Body":"#A07A9B","Cardio":"#C4856A","HIIT":"#D97070","Mobility / Yoga":"#7A9B8A","Run":"#6A8FAA","Swim":"#8AAAC4","Cycle":"#9BAA7A","Sports":"#C9A96E","Walk":"#8A9B8A","Other":"#7A7165"};
+      return(<div style={card}>
+        <SHead>Training Balance</SHead>
+        <div style={{fontSize:11,color:C.muted,marginBottom:14}}>Last {recent.length} sessions</div>
+        <div style={{display:"flex",flexDirection:"column",gap:9}}>
+          {sorted.map(([type,count])=>(
+            <div key={type}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:12,color:C.text}}>{type}</span><span style={{fontSize:11,color:C.muted,fontStyle:"italic"}}>{["once","twice","3×","4×","5×","6×","7×","8×","9×","10×"][count-1]||count+"×"}</span></div>
+              <div style={{height:5,background:C.border,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:((count/max)*100)+"%",background:(TYPE_COLORS[type]||C.accent)+"CC",borderRadius:3,transition:"width 0.3s"}} /></div>
+            </div>
+          ))}
+        </div>
+      </div>);
+    })()}
+
     {/* History */}
     {workoutDays.length>0&&(
       <div style={card}>
         <button onClick={()=>setHistOpen(!histOpen)} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",background:"none",border:"none",cursor:"pointer",color:C.text,marginBottom:histOpen?12:0}}>
           <div style={{...serif,fontSize:17}}>Workout History</div>
-          <span style={{fontSize:13,color:C.muted}}>{histOpen?"▾":"▸"} {workoutDays.length} sessions</span>
+          <span style={{fontSize:13,color:C.muted}}>{histOpen?"▾":"▸"}</span>
         </button>
         {histOpen&&workoutDays.slice(0,30).map(([d,v])=>(
           <div key={d} style={{padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
