@@ -119,7 +119,7 @@ function Modal({children,onClose}){
 // ═══════════════════════════════════════════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════════════
-function Dashboard({dailyLogs,setDailyLogs,groomingLogs,groomingIntervals,userName}){
+function Dashboard({dailyLogs,setDailyLogs,groomingLogs,groomingIntervals,userName,setTab}){
   const {C,card,inp,lbl}=React.useContext(ThemeCtx);
   const hr=new Date().getHours();
   const greeting=hr<12?"Good morning":hr<17?"Good afternoon":"Good evening";
@@ -174,6 +174,19 @@ function Dashboard({dailyLogs,setDailyLogs,groomingLogs,groomingIntervals,userNa
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
       <div style={{...card,textAlign:"center"}}><div style={lbl}>Sleep Grade</div><div style={{...serif,fontSize:44,fontWeight:300,color:"#8A9BAA",lineHeight:1.1}}>{yestLog.sleepQuality||"—"}</div><div style={{fontSize:11,color:C.muted,marginTop:3}}>{yestLog.sleepQuality?"/10 last night":"not logged"}</div></div>
       <div style={{...card,textAlign:"center"}}><div style={lbl}>Today's Skin</div><div style={{...serif,fontSize:44,fontWeight:300,color:C.gold,lineHeight:1.1}}>{today.skinRating||"—"}</div><div style={{fontSize:11,color:C.muted,marginTop:3}}>{today.skinRating?"/10":"not logged"}</div></div>
+    </div>
+
+    {/* Nav tiles */}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+      {[{id:"skin",label:"Skincare",icon:"✦",color:C.gold},{id:"workouts",label:"Health",icon:"◈",color:C.sage}].map(({id,label,icon,color})=>(
+        <button key={id} onClick={()=>setTab(id)} style={{...card,display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",border:`1px solid ${color}33`,background:color+"08",transition:"all 0.15s",textAlign:"left"}}>
+          <div>
+            <div style={{fontSize:10,letterSpacing:"0.12em",textTransform:"uppercase",color:color,fontWeight:500,marginBottom:4}}>{label}</div>
+            <div style={{fontSize:11,color:C.muted}}>Open →</div>
+          </div>
+          <div style={{...serif,fontSize:28,color:color+"88"}}>{icon}</div>
+        </button>
+      ))}
     </div>
 
     {/* Quick Log */}
@@ -501,7 +514,7 @@ function WorkoutsTab({logs,setLogs}){
 
   return(<div style={{display:"flex",flexDirection:"column",gap:18}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
-      <PTitle sub="Track your training">Workouts</PTitle>
+      <PTitle sub="Track your training">Health</PTitle>
       <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...inp,width:"auto",marginBottom:22}} />
     </div>
     {date!==todayStr()&&<div style={{fontSize:11,color:C.gold,padding:"6px 14px",background:C.gold+"12",borderRadius:8}}>Logging to {date}</div>}
@@ -678,7 +691,7 @@ function DataPanel({onClose}){
 const TABS=[
   {id:"tracker",label:"Tracker"},
   {id:"skin",label:"Skin"},
-  {id:"workouts",label:"Workouts"},
+  {id:"workouts",label:"Health"},
 ];
 
 function App(){
@@ -748,7 +761,7 @@ function App(){
       {showData&&<DataPanel onClose={()=>setShowData(false)} />}
       <div style={{position:"relative",zIndex:1,padding:"26px 20px 80px"}}>
         <div style={{maxWidth:960,margin:"0 auto"}}>
-          {tab==="dashboard"&&<Dashboard dailyLogs={dailyLogs} setDailyLogs={setDailyLogs} groomingLogs={groomingLogs} groomingIntervals={groomingIntervals} userName={userName} />}
+          {tab==="dashboard"&&<Dashboard dailyLogs={dailyLogs} setDailyLogs={setDailyLogs} groomingLogs={groomingLogs} groomingIntervals={groomingIntervals} userName={userName} setTab={setTab} />}
           {tab==="tracker"&&<TrackerTab logs={dailyLogs} setLogs={setDailyLogs} />}
           {tab==="skin"&&<SkinTab logs={dailyLogs} setLogs={setDailyLogs} groomingLogs={groomingLogs} setGroomingLogs={setGroomingLogs} groomingIntervals={groomingIntervals} setGroomingIntervals={setGroomingIntervals} />}
           {tab==="workouts"&&<WorkoutsTab logs={dailyLogs} setLogs={setDailyLogs} />}
