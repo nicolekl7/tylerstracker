@@ -240,72 +240,9 @@ function Dashboard({dailyLogs,setDailyLogs,groomingLogs,groomingIntervals,userNa
       </div>
     )}
 
-    {/* Pinned note */}
-    {today.pinnedNote&&(<div style={{...card,padding:"12px 18px",borderLeft:`3px solid ${C.gold}`,display:"flex",gap:10,alignItems:"flex-start"}}><span style={{fontSize:14,flexShrink:0}}>📌</span><div><div style={{...lbl,marginBottom:3}}>Today's note</div><div style={{fontSize:13,color:C.text}}>{today.pinnedNote}</div></div></div>)}
   </div>);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// TRACKER (Daily Log)
-// ═══════════════════════════════════════════════════════════════════════════════
-function TrackerTab({logs,setLogs}){
-  const {C,card,inp,lbl}=React.useContext(ThemeCtx);
-  const [date,setDate]=useState(todayStr());
-  const [prefillMsg,setPrefillMsg]=useState("");
-  const log=logs[date]||{};
-  const upd=(f,v)=>setLogs({...logs,[date]:{...(logs[date]||{}),[f]:v}});
-  const updArr=(f,item,checked)=>{const list=log[f]||[];upd(f,checked?[...list,item]:list.filter(x=>x!==item));};
-  const cycleSymptom=sym=>{const c=(log.symptoms||{})[sym]??null;const next=SEV_CYCLE[(SEV_CYCLE.indexOf(c)+1)%SEV_CYCLE.length];const s={...(log.symptoms||{})};if(next===null)delete s[sym];else s[sym]=next;upd("symptoms",s);};
-  const sl=sleepDuration(log.bedtime,log.wakeTime);
-
-  const prefillFromYesterday=()=>{
-    const yd=new Date(date+"T12:00:00");yd.setDate(yd.getDate()-1);
-    const yStr=yd.toISOString().split("T")[0];const y=logs[yStr]||{};const patch={};
-    if(y.skincare)patch.skincare=y.skincare;if(y.meds)patch.meds=y.meds;if(y.sleepSupps)patch.sleepSupps=y.sleepSupps;
-    if(!Object.keys(patch).length){setPrefillMsg("Nothing to copy from "+yStr);setTimeout(()=>setPrefillMsg(""),3000);return;}
-    setLogs({...logs,[date]:{...(logs[date]||{}),...patch}});
-    setPrefillMsg("Copied from "+yStr+" ✓");setTimeout(()=>setPrefillMsg(""),3000);
-  };
-
-  return(<div style={{display:"flex",flexDirection:"column",gap:18}}>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
-      <PTitle>Daily Tracker</PTitle>
-      <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
-        <button onClick={prefillFromYesterday} style={{padding:"7px 13px",borderRadius:8,cursor:"pointer",fontSize:11,fontWeight:500,background:"transparent",border:`1px solid ${C.border}`,color:C.muted,whiteSpace:"nowrap"}}>↩ Copy yesterday</button>
-        <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...inp,width:"auto"}} />
-      </div>
-    </div>
-    {prefillMsg&&<div style={{fontSize:12,color:C.sage,padding:"6px 14px",background:C.sage+"12",borderRadius:8}}>{prefillMsg}</div>}
-
-    {/* Mind & Mood */}
-    <div style={card}>
-      <SHead>Mind & Mood</SHead>
-      <Slider label="Sleep Grade" emoji="🌙" value={log.sleepQuality||5} onChange={v=>upd("sleepQuality",v)} color="#8A9BAA" />
-      <Slider label="Mood" emoji="🧠" value={log.mood||5} onChange={v=>upd("mood",v)} color={C.accent} />
-      <Slider label="Anxiety" emoji="⚡" value={log.anxiety||5} onChange={v=>upd("anxiety",v)} color={C.gold} />
-      <Slider label="Energy" emoji="✨" value={log.energy||5} onChange={v=>upd("energy",v)} color={C.sage} />
-      <Slider label="Focus" emoji="🎯" value={log.focus||5} onChange={v=>upd("focus",v)} color="#8A9BAA" />
-      <div><label style={lbl}>Notes</label><textarea rows={2} value={log.notes||""} onChange={e=>upd("notes",e.target.value)} placeholder="Anything on your mind today..." style={inp} /></div>
-    </div>
-
-    {/* Symptoms */}
-    <div style={card}>
-      <SHead>Symptoms</SHead>
-      <div style={{fontSize:11,color:C.muted,marginBottom:10}}>Tap to cycle: none → mild → moderate → severe</div>
-      <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-        {SYMPTOMS.map(sym=>{const sev=(log.symptoms||{})[sym];return(<button key={sym} onClick={()=>cycleSymptom(sym)} style={{padding:"5px 12px",borderRadius:18,fontSize:12,cursor:"pointer",background:sev?SEV_COLORS[sev]+"18":"transparent",border:`1px solid ${sev?SEV_COLORS[sev]+"66":C.border}`,color:sev?SEV_COLORS[sev]:C.muted,fontWeight:sev?500:400,transition:"all 0.12s"}}>{sym}{sev?" · "+sev:""}</button>);})}
-      </div>
-    </div>
-
-    {/* Pin a Note */}
-    <div style={{...card,borderLeft:`3px solid ${C.gold}`}}>
-      <SHead>📌 Pin a Note</SHead>
-      <input value={log.pinnedNote||""} onChange={e=>upd("pinnedNote",e.target.value)} placeholder="New product started · Unusual reaction · Something to flag..." style={inp} />
-      <div style={{fontSize:11,color:C.faint,marginTop:6}}>Appears on Dashboard. Use for context that doesn't fit a symptom.</div>
-    </div>
-
-  </div>);
-}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SKIN TAB
@@ -469,10 +406,19 @@ function WorkoutsTab({logs,setLogs}){
   const [date,setDate]=useState(todayStr());
   const [form,setForm]=useState({type:"Push",duration:"",intensity:7,notes:""});
   const [histOpen,setHistOpen]=useState(false);
-  const [weeklyGoal,setWeeklyGoal]=useLS("mw_workout_goal",4);
+  const [prefillMsg,setPrefillMsg]=useState("");
   const log=logs[date]||{};
   const upd=(f,v)=>setLogs({...logs,[date]:{...(logs[date]||{}),[f]:v}});
   const updArr=(f,item,checked)=>{const list=log[f]||[];upd(f,checked?[...list,item]:list.filter(x=>x!==item));};
+
+  const prefillFromYesterday=()=>{
+    const yd=new Date(date+"T12:00:00");yd.setDate(yd.getDate()-1);
+    const yStr=yd.toISOString().split("T")[0];const y=logs[yStr]||{};const patch={};
+    if(y.skincare)patch.skincare=y.skincare;if(y.meds)patch.meds=y.meds;if(y.sleepSupps)patch.sleepSupps=y.sleepSupps;
+    if(!Object.keys(patch).length){setPrefillMsg("Nothing to copy from "+yStr);setTimeout(()=>setPrefillMsg(""),3000);return;}
+    setLogs({...logs,[date]:{...(logs[date]||{}),...patch}});
+    setPrefillMsg("Copied from "+yStr+" ✓");setTimeout(()=>setPrefillMsg(""),3000);
+  };
 
   const addWorkout=()=>{
     const w=[...(log.workouts||[]),{id:Date.now(),type:form.type,duration:form.duration?+form.duration:null,intensity:form.intensity,notes:form.notes}];
@@ -489,16 +435,6 @@ function WorkoutsTab({logs,setLogs}){
     upd("medDoses",doses);
   };
 
-  // This week
-  const ws=weekStart(todayStr());
-  const thisWeekDays=Array.from({length:7},(_,i)=>{
-    const d=new Date(ws+"T12:00:00");d.setDate(d.getDate()+i);
-    const k=d.toISOString().split("T")[0];
-    const w=logs[k]?.workouts||[];
-    return{k,dow:["M","T","W","T","F","S","S"][i],hasWorkout:w.length>0,types:w.map(x=>x.type)};
-  });
-  const thisWeekCount=thisWeekDays.filter(d=>d.hasWorkout).length;
-
   // 8-week chart
   const weeks=Array.from({length:8},(_,i)=>{
     const d=new Date();d.setDate(d.getDate()-(7*(7-i)));
@@ -514,19 +450,27 @@ function WorkoutsTab({logs,setLogs}){
 
   return(<div style={{display:"flex",flexDirection:"column",gap:18}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
-      <PTitle sub="Track your training">Health</PTitle>
-      <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...inp,width:"auto",marginBottom:22}} />
+      <PTitle>Health</PTitle>
+      <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
+        <button onClick={prefillFromYesterday} style={{padding:"7px 13px",borderRadius:8,cursor:"pointer",fontSize:11,fontWeight:500,background:"transparent",border:`1px solid ${C.border}`,color:C.muted,whiteSpace:"nowrap"}}>↩ Copy yesterday</button>
+        <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...inp,width:"auto"}} />
+      </div>
     </div>
+    {prefillMsg&&<div style={{fontSize:12,color:C.sage,padding:"6px 14px",background:C.sage+"12",borderRadius:8}}>{prefillMsg}</div>}
     {date!==todayStr()&&<div style={{fontSize:11,color:C.gold,padding:"6px 14px",background:C.gold+"12",borderRadius:8}}>Logging to {date}</div>}
 
-    {/* Sleep Grade */}
+    {/* Mind & Mood */}
     <div style={card}>
-      <SHead>Sleep</SHead>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}><span style={lbl}>🌙 Last Night's Grade</span><span style={{...serif,fontSize:28,color:"#8A9BAA",lineHeight:1}}>{log.sleepQuality||5}<span style={{fontSize:12,color:C.muted}}>/10</span></span></div>
-      <input type="range" min={1} max={10} value={log.sleepQuality||5} onChange={e=>upd("sleepQuality",+e.target.value)} />
+      <SHead>Mind & Mood</SHead>
+      <Slider label="Sleep Grade" emoji="🌙" value={log.sleepQuality||5} onChange={v=>upd("sleepQuality",v)} color="#8A9BAA" />
+      <Slider label="Mood" emoji="🧠" value={log.mood||5} onChange={v=>upd("mood",v)} color={C.accent} />
+      <Slider label="Anxiety" emoji="⚡" value={log.anxiety||5} onChange={v=>upd("anxiety",v)} color={C.gold} />
+      <Slider label="Energy" emoji="✨" value={log.energy||5} onChange={v=>upd("energy",v)} color={C.sage} />
+      <Slider label="Focus" emoji="🎯" value={log.focus||5} onChange={v=>upd("focus",v)} color="#8A9BAA" />
+      <div><label style={lbl}>Notes</label><textarea rows={2} value={log.notes||""} onChange={e=>upd("notes",e.target.value)} placeholder="Anything on your mind today..." style={inp} /></div>
     </div>
 
-    {/* Health — Medications & Supplements */}
+    {/* Medications & Supplements */}
     <div style={card}>
       <SHead>Health</SHead>
       <div style={{fontSize:10,letterSpacing:"0.12em",textTransform:"uppercase",color:C.muted,marginBottom:10,fontWeight:500}}>Timed Medications</div>
@@ -548,23 +492,16 @@ function WorkoutsTab({logs,setLogs}){
       <input value={log.healthNote||""} onChange={e=>upd("healthNote",e.target.value)} placeholder="Notes..." style={inp} />
     </div>
 
-    {/* Stats row */}
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-      <div style={{...card,textAlign:"center"}}><div style={lbl}>This Week</div><div style={{...serif,fontSize:44,fontWeight:300,color:thisWeekCount>=weeklyGoal?C.sage:C.gold,lineHeight:1.1}}>{thisWeekCount}</div><div style={{fontSize:11,color:C.muted,marginTop:3}}>of {weeklyGoal} goal</div></div>
-      <div style={{...card,textAlign:"center"}}><div style={lbl}>Weekly Goal</div><input type="number" value={weeklyGoal} onChange={e=>setWeeklyGoal(+e.target.value)} min={1} max={7} style={{...inp,textAlign:"center",...serif,fontSize:32,fontWeight:300,color:C.muted,background:"transparent",border:"none",padding:0,width:"100%",marginTop:4}} /></div>
-    </div>
-
-    {/* This week grid */}
+    {/* Symptoms */}
     <div style={card}>
-      <SHead right={<span style={{fontSize:11,color:C.faint}}>week of {new Date(ws+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>}>This Week</SHead>
-      <div style={{display:"flex",gap:6}}>
-        {thisWeekDays.map((d,i)=>(
-          <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:5}}>
-            <div style={{fontSize:10,color:C.muted}}>{d.dow}</div>
-            <div style={{width:"100%",aspectRatio:"1",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",background:d.hasWorkout?C.accent+"33":"transparent",border:`1px solid ${d.hasWorkout?C.accent+"66":C.border}`,fontSize:9,color:d.hasWorkout?C.accent:C.faint,fontWeight:600,overflow:"hidden"}}>{d.hasWorkout?(d.types[0]||"").slice(0,3).toUpperCase():""}</div>
-            <div style={{width:6,height:6,borderRadius:"50%",background:d.k===todayStr()?C.accent:C.border}} />
-          </div>
-        ))}
+      <SHead>Symptoms</SHead>
+      <div style={{fontSize:11,color:C.muted,marginBottom:10}}>Tap to cycle: none → mild → moderate → severe</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+        {SYMPTOMS.map(sym=>{
+          const sev=(log.symptoms||{})[sym];
+          const cyc=()=>{const c=(log.symptoms||{})[sym]??null;const next=SEV_CYCLE[(SEV_CYCLE.indexOf(c)+1)%SEV_CYCLE.length];const s={...(log.symptoms||{})};if(next===null)delete s[sym];else s[sym]=next;upd("symptoms",s);};
+          return(<button key={sym} onClick={cyc} style={{padding:"5px 12px",borderRadius:18,fontSize:12,cursor:"pointer",background:sev?SEV_COLORS[sev]+"18":"transparent",border:`1px solid ${sev?SEV_COLORS[sev]+"66":C.border}`,color:sev?SEV_COLORS[sev]:C.muted,fontWeight:sev?500:400,transition:"all 0.12s"}}>{sym}{sev?" · "+sev:""}</button>);
+        })}
       </div>
     </div>
 
@@ -689,7 +626,6 @@ function DataPanel({onClose}){
 // APP
 // ═══════════════════════════════════════════════════════════════════════════════
 const TABS=[
-  {id:"tracker",label:"Tracker"},
   {id:"skin",label:"Skin"},
   {id:"workouts",label:"Health"},
 ];
@@ -762,8 +698,7 @@ function App(){
       <div style={{position:"relative",zIndex:1,padding:"26px 20px 80px"}}>
         <div style={{maxWidth:960,margin:"0 auto"}}>
           {tab==="dashboard"&&<Dashboard dailyLogs={dailyLogs} setDailyLogs={setDailyLogs} groomingLogs={groomingLogs} groomingIntervals={groomingIntervals} userName={userName} setTab={setTab} />}
-          {tab==="tracker"&&<TrackerTab logs={dailyLogs} setLogs={setDailyLogs} />}
-          {tab==="skin"&&<SkinTab logs={dailyLogs} setLogs={setDailyLogs} groomingLogs={groomingLogs} setGroomingLogs={setGroomingLogs} groomingIntervals={groomingIntervals} setGroomingIntervals={setGroomingIntervals} />}
+{tab==="skin"&&<SkinTab logs={dailyLogs} setLogs={setDailyLogs} groomingLogs={groomingLogs} setGroomingLogs={setGroomingLogs} groomingIntervals={groomingIntervals} setGroomingIntervals={setGroomingIntervals} />}
           {tab==="workouts"&&<WorkoutsTab logs={dailyLogs} setLogs={setDailyLogs} />}
         </div>
       </div>
