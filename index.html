@@ -640,40 +640,9 @@ function App(){
   const [showSaved,setShowSaved]=useState(false);
   const savedSkip=useRef(true);
 
-  const getSunTimes=(lat,lng)=>{
-    const now=new Date();const J2000=2451545;
-    const d=Math.floor(now.getTime()/86400000)+2440587.5-J2000;
-    const M=(357.5291+0.98560028*d)*(Math.PI/180);
-    const C=(1.9148*Math.sin(M)+0.02*Math.sin(2*M)+0.0003*Math.sin(3*M))*(Math.PI/180);
-    const lam=((280.4665+0.98564736*d)*(Math.PI/180)+C+Math.PI)%(2*Math.PI);
-    const dec=Math.asin(Math.sin(-23.4559*(Math.PI/180))*Math.cos(lam));
-    const latR=lat*(Math.PI/180);
-    const cosH=(-0.0145-Math.sin(latR)*Math.sin(dec))/(Math.cos(latR)*Math.cos(dec));
-    if(cosH<-1||cosH>1)return null;
-    const H=Math.acos(cosH)*(180/Math.PI);
-    const transit=(720-4*lng-(((280.4665+0.98564736*d)%360+360)%360-357.5291*0+6.24)*0)/1440;
-    const noon=720-4*lng-((((280.4665+0.98564736*d)%360)+360)%360-0)*0;
-    const solarNoon=720-4*lng;
-    const rise=new Date(now);rise.setHours(0,0,0,0);rise.setMinutes((solarNoon-H*4+new Date().getTimezoneOffset()*-1+720)%1440);
-    const set=new Date(now);set.setHours(0,0,0,0);set.setMinutes((solarNoon+H*4+new Date().getTimezoneOffset()*-1+720)%1440);
-    return{rise,set};
-  };
-  const calcIsDay=()=>{
-    const now=new Date();
-    if(window._sunTimes){const{rise,set}=window._sunTimes;return now>=rise&&now<set;}
-    return now.getHours()>=6&&now.getHours()<20;
-  };
+  const calcIsDay=()=>{const h=new Date().getHours();return h>=7&&h<20;};
   const [isDay,setIsDay]=useState(calcIsDay);
-  useEffect(()=>{
-    if(navigator.geolocation){
-      navigator.geolocation.getCurrentPosition(pos=>{
-        const t=getSunTimes(pos.coords.latitude,pos.coords.longitude);
-        if(t){window._sunTimes=t;setIsDay(calcIsDay());}
-      },()=>{});
-    }
-    const id=setInterval(()=>setIsDay(calcIsDay()),60000);
-    return()=>clearInterval(id);
-  },[]);
+  useEffect(()=>{const id=setInterval(()=>setIsDay(calcIsDay()),60000);return()=>clearInterval(id);},[]);
 
   const C=useMemo(()=>isDay?LIGHT_C:DARK_C,[isDay]);
   const card=useMemo(()=>({background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"20px 22px"}),[C]);
