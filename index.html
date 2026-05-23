@@ -171,7 +171,7 @@ function Dashboard({dailyLogs,setDailyLogs,groomingLogs,groomingIntervals,userNa
 
     {/* Stats */}
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-      <div style={{...card,textAlign:"center"}}><div style={lbl}>Sleep Grade</div><div style={{...serif,fontSize:44,fontWeight:300,color:"#8A9BAA",lineHeight:1.1}}>{yestLog.sleepQuality||"—"}</div><div style={{fontSize:11,color:C.muted,marginTop:3}}>{yestLog.sleepQuality?"/10 last night":"not logged"}</div></div>
+      <div style={{...card,textAlign:"center"}}><div style={lbl}>Sleep Grade</div><div style={{...serif,fontSize:44,fontWeight:300,color:"#8A9BAA",lineHeight:1.1}}>{yestLog.sleepQuality||"—"}</div><div style={{fontSize:11,color:C.muted,marginTop:3}}>{yestLog.sleepQuality?"/10 last night":"not logged"}</div>{yestLog.garminSleep&&<div style={{fontSize:11,color:C.muted,marginTop:4}}>⌚ {yestLog.garminSleep} Garmin</div>}</div>
       <div style={{...card,textAlign:"center"}}><div style={lbl}>Today's Skin</div><div style={{...serif,fontSize:44,fontWeight:300,color:C.gold,lineHeight:1.1}}>{today.skinRating||"—"}</div><div style={{fontSize:11,color:C.muted,marginTop:3}}>{today.skinRating?"/10":"not logged"}</div></div>
     </div>
 
@@ -452,6 +452,11 @@ function WorkoutsTab({logs,setLogs}){
     <div style={card}>
       <SHead>Mind & Mood</SHead>
       <Slider label="Sleep Grade" emoji="🌙" value={log.sleepQuality||5} onChange={v=>upd("sleepQuality",v)} color="#8A9BAA" />
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+        <span style={{fontSize:15}}>⌚</span>
+        <label style={{...lbl,flex:1,marginBottom:0}}>Garmin Sleep Score</label>
+        <input type="number" min={0} max={100} value={log.garminSleep||""} onChange={e=>upd("garminSleep",e.target.value===""?"":Math.min(100,Math.max(0,Number(e.target.value))))} placeholder="0–100" style={{...inp,width:72,textAlign:"center",padding:"6px 10px"}} />
+      </div>
       <Slider label="Mood" emoji="🧠" value={log.mood||5} onChange={v=>upd("mood",v)} color={C.accent} />
       <Slider label="Anxiety" emoji="⚡" value={log.anxiety||5} onChange={v=>upd("anxiety",v)} color={C.gold} />
       <Slider label="Energy" emoji="✨" value={log.energy||5} onChange={v=>upd("energy",v)} color={C.sage} />
