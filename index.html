@@ -435,6 +435,10 @@ function WorkoutsTab({logs,setLogs}){
     const doses={...(log.medDoses||{})};doses[medId]=(doses[medId]||[]).filter(d=>d.id!==doseId);
     upd("medDoses",doses);
   };
+  const updateDoseTime=(medId,doseId,newTime)=>{
+    const doses={...(log.medDoses||{})};doses[medId]=(doses[medId]||[]).map(d=>d.id===doseId?{...d,time:newTime}:d);
+    upd("medDoses",doses);
+  };
 
   // History
   const workoutDays=Object.entries(logs).filter(([,v])=>(v?.workouts||[]).length>0).sort((a,b)=>new Date(b[0])-new Date(a[0]));
@@ -481,7 +485,7 @@ function WorkoutsTab({logs,setLogs}){
                 ?<input autoFocus value={timing} onChange={e=>setMedTimings({...medTimings,[med.id]:e.target.value})} onBlur={()=>setEditingTiming(null)} onKeyDown={e=>{if(e.key==="Enter"||e.key==="Escape")setEditingTiming(null);}} style={{...inp,fontSize:11,padding:"3px 7px",marginTop:2}} />
                 :<div onClick={()=>setEditingTiming(med.id)} title="Tap to edit timing" style={{fontSize:11,color:C.faint,cursor:"text",borderBottom:`1px dashed ${C.faint}44`,display:"inline-block"}}>{timing||<span style={{color:C.faint,fontStyle:"italic"}}>add timing…</span>}</div>
               }
-              {doses.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:6}}>{doses.map(d=>(<span key={d.id} style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:11,padding:"2px 8px",borderRadius:10,background:C.accent+"18",color:C.accent}}>{fmt12(d.time)}<button onClick={()=>removeDose(med.id,d.id)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,lineHeight:1,padding:0}}>×</button></span>))}</div>}
+              {doses.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:6}}>{doses.map(d=>(<span key={d.id} style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:11,padding:"2px 6px",borderRadius:10,background:C.accent+"18",color:C.accent}}><input type="time" value={d.time} onChange={e=>updateDoseTime(med.id,d.id,e.target.value)} style={{background:"transparent",border:"none",color:C.accent,fontSize:11,fontFamily:"inherit",cursor:"pointer",padding:0,width:70}} /><button onClick={()=>removeDose(med.id,d.id)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,lineHeight:1,padding:0}}>×</button></span>))}</div>}
             </div>
             <button onClick={()=>addDose(med.id)} style={{flexShrink:0,padding:"7px 14px",borderRadius:8,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:12,fontWeight:500,transition:"all 0.12s"}}>+ Dose</button>
           </div>);
