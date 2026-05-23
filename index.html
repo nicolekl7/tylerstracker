@@ -406,6 +406,8 @@ function WorkoutsTab({logs,setLogs}){
   const [form,setForm]=useState({type:"Push",duration:"",intensity:7,notes:""});
   const [histOpen,setHistOpen]=useState(false);
   const [prefillMsg,setPrefillMsg]=useState("");
+  const [medTimings,setMedTimings]=useLS("mw_med_timings",{});
+  const [editingTiming,setEditingTiming]=useState(null);
   const log=logs[date]||{};
   const upd=(f,v)=>setLogs({...logs,[date]:{...(logs[date]||{}),[f]:v}});
   const updArr=(f,item,checked)=>{const list=log[f]||[];upd(f,checked?[...list,item]:list.filter(x=>x!==item));};
@@ -470,10 +472,15 @@ function WorkoutsTab({logs,setLogs}){
       <div style={{display:"flex",flexDirection:"column",gap:1,marginBottom:18}}>
         {TIMED_MEDS.map(med=>{
           const doses=(log.medDoses||{})[med.id]||[];
+          const timing=medTimings[med.id]??med.info;
+          const isEditing=editingTiming===med.id;
           return(<div key={med.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:10,background:doses.length>0?C.accent+"0A":C.surface,border:`1px solid ${doses.length>0?C.accent+"33":C.border}`,marginBottom:4}}>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:13,fontWeight:500,color:doses.length>0?C.text:C.muted,marginBottom:2}}>{med.name}</div>
-              <div style={{fontSize:11,color:C.faint}}>{med.info}</div>
+              {isEditing
+                ?<input autoFocus value={timing} onChange={e=>setMedTimings({...medTimings,[med.id]:e.target.value})} onBlur={()=>setEditingTiming(null)} onKeyDown={e=>{if(e.key==="Enter"||e.key==="Escape")setEditingTiming(null);}} style={{...inp,fontSize:11,padding:"3px 7px",marginTop:2}} />
+                :<div onClick={()=>setEditingTiming(med.id)} title="Tap to edit timing" style={{fontSize:11,color:C.faint,cursor:"text",borderBottom:`1px dashed ${C.faint}44`,display:"inline-block"}}>{timing||<span style={{color:C.faint,fontStyle:"italic"}}>add timing…</span>}</div>
+              }
               {doses.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:6}}>{doses.map(d=>(<span key={d.id} style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:11,padding:"2px 8px",borderRadius:10,background:C.accent+"18",color:C.accent}}>{fmt12(d.time)}<button onClick={()=>removeDose(med.id,d.id)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,lineHeight:1,padding:0}}>×</button></span>))}</div>}
             </div>
             <button onClick={()=>addDose(med.id)} style={{flexShrink:0,padding:"7px 14px",borderRadius:8,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:12,fontWeight:500,transition:"all 0.12s"}}>+ Dose</button>
