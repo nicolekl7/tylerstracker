@@ -39,6 +39,23 @@ const fmt12 = t => { if(!t) return ""; const [h,m]=t.split(":").map(Number); ret
 function sleepDuration(bed,wake){if(!bed||!wake)return null;const [bh,bm]=bed.split(":").map(Number),[wh,wm]=wake.split(":").map(Number);let mins=(wh*60+wm)-(bh*60+bm);if(mins<0)mins+=1440;return{h:Math.floor(mins/60),m:mins%60,total:mins,label:Math.floor(mins/60)+"h"+(mins%60>0?" "+(mins%60)+"m":"")};}
 function weekStart(ds){const d=new Date(ds+"T12:00:00"),day=d.getDay(),diff=(day===0?-6:1)-day;d.setDate(d.getDate()+diff);return d.toISOString().split("T")[0];}
 
+function getTretRec(dateStr){
+  const d=new Date(dateStr+"T12:00:00");
+  const p1Start=new Date("2025-05-22T12:00:00"),p2Start=new Date("2025-06-08T12:00:00"),p3Start=new Date("2025-06-29T12:00:00");
+  let phase,isTret,phaseLabel,phaseEnd;
+  if(d<p1Start){return null;}
+  else if(d<p2Start){
+    phase=1;phaseLabel="Phase 1 — every 3rd night";phaseEnd="Jun 7";
+    const days=Math.round((d-p1Start)/(86400000));isTret=days%3===0;
+  }else if(d<p3Start){
+    phase=2;phaseLabel="Phase 2 — every other night";phaseEnd="Jun 28";
+    const days=Math.round((d-p2Start)/(86400000));isTret=days%2===0;
+  }else{
+    phase=3;phaseLabel="Phase 3 — nightly";phaseEnd=null;isTret=true;
+  }
+  return{phase,isTret,phaseLabel,phaseEnd};
+}
+
 function useLS(key,init){
   const [v,sv]=useState(()=>{try{const s=localStorage.getItem(key);return s?JSON.parse(s):init;}catch{return init;}});
   useEffect(()=>{try{localStorage.setItem(key,JSON.stringify(v));}catch(e){};},[key,v]);
@@ -333,6 +350,48 @@ function SkinTab({logs,setLogs,groomingLogs,setGroomingLogs,groomingIntervals,se
       <div style={{flex:1}}>{mkPhotoSlot("skinPhotoRight",fileRefRight,"Right →")}</div>
     </div>
     <button onClick={()=>{setSkinSubmitted(true);setTimeout(()=>setSkinSubmitted(false),3000);}} style={{width:"100%",padding:"11px",borderRadius:9,cursor:"pointer",fontSize:13,fontWeight:500,transition:"all 0.2s",background:skinSubmitted?C.sage+"22":"transparent",border:`1px solid ${skinSubmitted?C.sage:C.border}`,color:skinSubmitted?C.sage:C.muted}}>{skinSubmitted?"Skin logged ✓  "+date:"Save skin entry"}</button>
+
+    {/* Tretinoin Ramp Recommendation */}
+    {(()=>{
+      const rec=getTretRec(date);
+      if(!rec)return null;
+      const isTret=rec.isTret;
+      const col=isTret?C.accent:C.sage;
+      const TRET_STEPS=["Cleanse","Wait 20–30 min (fully dry)","Moisturizer","Pea-size Tretinoin (whole face, avoid eyes/nose creases/lips)","Moisturizer"];
+      const RESTORE_STEPS=["Cleanse","B5","Moisturizer"];
+      const AM_STEPS=["Cleanse","Moisturizer (B5 underneath if dry)","Sunscreen — generous"];
+      const steps=isTret?TRET_STEPS:RESTORE_STEPS;
+      return(
+        <div style={{...card,border:`1px solid ${col}33`,background:col+"07"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+            <div>
+              <div style={{fontSize:10,letterSpacing:"0.12em",textTransform:"uppercase",color:col,fontWeight:500,marginBottom:4}}>{rec.phaseLabel}{rec.phaseEnd?" · thru "+rec.phaseEnd:""}</div>
+              <div style={{...serif,fontSize:22,fontWeight:400,color:col}}>{isTret?"Tret PM":"Restore PM"}</div>
+            </div>
+            <div style={{fontSize:10,color:C.muted,textAlign:"right",marginTop:2}}>{date===todayStr()?"Tonight":"This night"}</div>
+          </div>
+          <div style={{marginBottom:14}}>
+            <div style={{fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",color:C.muted,marginBottom:7,fontWeight:500}}>PM Routine</div>
+            {steps.map((s,i)=>(
+              <div key={i} style={{display:"flex",gap:9,alignItems:"flex-start",marginBottom:5}}>
+                <div style={{flexShrink:0,width:18,height:18,borderRadius:"50%",background:col+"22",color:col,fontSize:10,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center"}}>{i+1}</div>
+                <div style={{fontSize:12,color:C.text,lineHeight:1.4,paddingTop:2}}>{s}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{borderTop:`1px solid ${C.border}`,paddingTop:12}}>
+            <div style={{fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",color:C.muted,marginBottom:7,fontWeight:500}}>AM Routine — every day</div>
+            {AM_STEPS.map((s,i)=>(
+              <div key={i} style={{display:"flex",gap:9,alignItems:"flex-start",marginBottom:5}}>
+                <div style={{flexShrink:0,width:18,height:18,borderRadius:"50%",background:C.gold+"22",color:C.gold,fontSize:10,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center"}}>{i+1}</div>
+                <div style={{fontSize:12,color:C.text,lineHeight:1.4,paddingTop:2}}>{s}</div>
+              </div>
+            ))}
+          </div>
+          {rec.phase<3&&<div style={{marginTop:12,fontSize:11,color:C.muted,fontStyle:"italic",lineHeight:1.5}}>Only advance phases if skin is calm — flaking or stinging means hold the current cadence.</div>}
+        </div>
+      );
+    })()}
 
     {/* Skincare Routine */}
     <div style={card}>
