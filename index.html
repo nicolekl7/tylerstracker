@@ -39,21 +39,31 @@ const fmt12 = t => { if(!t) return ""; const [h,m]=t.split(":").map(Number); ret
 function sleepDuration(bed,wake){if(!bed||!wake)return null;const [bh,bm]=bed.split(":").map(Number),[wh,wm]=wake.split(":").map(Number);let mins=(wh*60+wm)-(bh*60+bm);if(mins<0)mins+=1440;return{h:Math.floor(mins/60),m:mins%60,total:mins,label:Math.floor(mins/60)+"h"+(mins%60>0?" "+(mins%60)+"m":"")};}
 function weekStart(ds){const d=new Date(ds+"T12:00:00"),day=d.getDay(),diff=(day===0?-6:1)-day;d.setDate(d.getDate()+diff);return d.toISOString().split("T")[0];}
 
-function getTretRec(dateStr){
+function getTretRec(dateStr, lastTretDate){
   const d=new Date(dateStr+"T12:00:00");
   const p1Start=new Date("2025-05-22T12:00:00"),p2Start=new Date("2025-06-08T12:00:00"),p3Start=new Date("2025-06-29T12:00:00");
-  let phase,isTret,phaseLabel,phaseEnd;
   if(d<p1Start){return null;}
-  else if(d<p2Start){
-    phase=1;phaseLabel="Phase 1 — every 3rd night";phaseEnd="Jun 7";
-    const days=Math.round((d-p1Start)/(86400000));isTret=days%3===0;
-  }else if(d<p3Start){
-    phase=2;phaseLabel="Phase 2 — every other night";phaseEnd="Jun 28";
-    const days=Math.round((d-p2Start)/(86400000));isTret=days%2===0;
+  if(d>=p3Start){return{phase:3,isTret:true,phaseLabel:"Phase 3 — nightly",phaseEnd:null,nextTretDate:null};}
+  const phase=d<p2Start?1:2;
+  const phaseLabel=phase===1?"Phase 1 — every 3rd night":"Phase 2 — every other night";
+  const phaseEnd=phase===1?"Jun 7":"Jun 28";
+  const interval=phase===1?3:2;
+  const phaseStart=phase===1?p1Start:p2Start;
+  let isTret,nextTretDate=null;
+  if(!lastTretDate){
+    const days=Math.round((d-phaseStart)/86400000);
+    isTret=days%interval===0;
+    if(!isTret){const n=new Date(d);n.setDate(n.getDate()+(interval-(days%interval)));nextTretDate=n.toISOString().split("T")[0];}
   }else{
-    phase=3;phaseLabel="Phase 3 — nightly";phaseEnd=null;isTret=true;
+    const last=new Date(lastTretDate+"T12:00:00");
+    const gap=Math.round((d-last)/86400000);
+    isTret=gap>=interval&&gap>1;
+    if(!isTret){
+      const n=new Date(last);n.setDate(n.getDate()+interval);
+      if(n>d)nextTretDate=n.toISOString().split("T")[0];
+    }
   }
-  return{phase,isTret,phaseLabel,phaseEnd};
+  return{phase,isTret,phaseLabel,phaseEnd,nextTretDate};
 }
 
 function useLS(key,init){
@@ -353,7 +363,8 @@ function SkinTab({logs,setLogs,groomingLogs,setGroomingLogs,groomingIntervals,se
 
     {/* Tretinoin Ramp Recommendation */}
     {(()=>{
-      const rec=getTretRec(date);
+      const lastTretDate=Object.keys(logs).filter(d=>d<date&&((logs[d]?.skincare?.PM||[]).includes("Tretinoin .025%")||(logs[d]?.skincare?.PM||[]).includes("Tretinoin .025%\n"))).sort().slice(-1)[0]||null;
+      const rec=getTretRec(date,lastTretDate);
       if(!rec)return null;
       const isTret=rec.isTret;
       const col=isTret?C.accent:C.sage;
@@ -361,12 +372,15 @@ function SkinTab({logs,setLogs,groomingLogs,setGroomingLogs,groomingIntervals,se
       const RESTORE_STEPS=["Cleanse","B5","Moisturizer"];
       const AM_STEPS=["Cleanse","Moisturizer (B5 underneath if dry)","Sunscreen — generous"];
       const steps=isTret?TRET_STEPS:RESTORE_STEPS;
+      const fmtDate=ds=>{const d=new Date(ds+"T12:00:00");return d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});};
       return(
         <div style={{...card,border:`1px solid ${col}33`,background:col+"07"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
             <div>
               <div style={{fontSize:10,letterSpacing:"0.12em",textTransform:"uppercase",color:col,fontWeight:500,marginBottom:4}}>{rec.phaseLabel}{rec.phaseEnd?" · thru "+rec.phaseEnd:""}</div>
               <div style={{...serif,fontSize:22,fontWeight:400,color:col}}>{isTret?"Tret PM":"Restore PM"}</div>
+              {!isTret&&rec.nextTretDate&&<div style={{fontSize:11,color:C.muted,marginTop:3}}>Next tret: {fmtDate(rec.nextTretDate)}</div>}
+              {!isTret&&lastTretDate&&<div style={{fontSize:10,color:C.faint,marginTop:2}}>Last tret: {fmtDate(lastTretDate)}</div>}
             </div>
             <div style={{fontSize:10,color:C.muted,textAlign:"right",marginTop:2}}>{date===todayStr()?"Tonight":"This night"}</div>
           </div>
