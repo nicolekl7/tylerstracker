@@ -41,7 +41,7 @@ function weekStart(ds){const d=new Date(ds+"T12:00:00"),day=d.getDay(),diff=(day
 
 function getTretRec(dateStr, lastTretDate){
   const d=new Date(dateStr+"T12:00:00");
-  const p1Start=new Date("2025-05-22T12:00:00"),p2Start=new Date("2025-06-08T12:00:00"),p3Start=new Date("2025-06-29T12:00:00");
+  const p1Start=new Date("2026-05-22T12:00:00"),p2Start=new Date("2026-06-08T12:00:00"),p3Start=new Date("2026-06-29T12:00:00");
   if(d<p1Start){return null;}
   if(d>=p3Start){return{phase:3,isTret:true,phaseLabel:"Phase 3 — nightly",phaseEnd:null,nextTretDate:null};}
   const phase=d<p2Start?1:2;
